@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pink Background with Request Headers</title>
+    <style>
+        body {
+            background-color: #ff33e4;
+            color: white;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            margin: 0;
+        }
+        .header-container {
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header-row {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+        }
+        .header-row:last-child {
+            border-bottom: none;
+        }
+        .header-name {
+            font-weight: bold;
+            min-width: 180px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .server-info {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+        .error-message {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #ff9999;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <h1>HTTP Request Headers</h1>
+        <div id="headers-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading headers...</p>
+            </div>
+        </div>
+        <div class="server-info" id="server-info"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const headersList = document.getElementById('headers-list');
+            const serverInfo = document.getElementById('server-info');
+            
+            // Fetch the headers from our local Node.js service
+            fetch('/echo-headers')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(headers => {
+                    headersList.innerHTML = '';
+                    
+                    if (Object.keys(headers).length === 0) {
+                        headersList.innerHTML = '<p>No headers available</p>';
+                        return;
+                    }
+                    
+                    // Create a header row for each header
+                    for (const [name, value] of Object.entries(headers)) {
+                        const headerRow = document.createElement('div');
+                        headerRow.className = 'header-row';
+                        
+                        const headerName = document.createElement('div');
+                        headerName.className = 'header-name';
+                        headerName.textContent = name + ':';
+                        
+                        const headerValue = document.createElement('div');
+                        headerValue.className = 'header-value';
+                        headerValue.textContent = value;
+                        
+                        headerRow.appendChild(headerName);
+                        headerRow.appendChild(headerValue);
+                        
+                        headersList.appendChild(headerRow);
+                    }
+                    
+                    // Show timestamp
+                    if (headers['server-timestamp']) {
+                        serverInfo.textContent = `Headers captured at: ${headers['server-timestamp']}`;
+                    }
+                })
+                .catch(error => {
+                    headersList.innerHTML = `
+                        <div class="error-message">
+                            <p>Error loading headers: ${error.message}</p>
+                            <p>Make sure the headers service is running.</p>
+                        </div>
+                    `;
+                });
+        });
+    </script>
+</body>
+</html>
